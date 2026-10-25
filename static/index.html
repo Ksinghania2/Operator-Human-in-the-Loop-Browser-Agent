@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operator · Do it for me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f4efe6;--panel:#fbf8f2;--ink:#1b1a17;--mute:#7a7467;--line:#d9d1c2;--red:#e4472b;--green:#3f6b4f}
+*{box-sizing:border-box;margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 "Inter Tight",system-ui,sans-serif;min-height:100vh}
+main{max-width:1300px;margin:0 auto;padding:36px 24px 64px}
+h1{font:700 clamp(2.4rem,5.5vw,4.2rem)/.95 Fraunces,serif;letter-spacing:-.03em}
+h1 em{color:var(--red);font-style:italic}
+.lede{color:var(--mute);margin:12px 0 28px;max-width:56ch}
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{font:500 .85rem "Inter Tight";color:var(--mute)}
+textarea{width:100%;min-height:130px;margin:8px 0 12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;color:var(--ink);resize:vertical}
+button{font:500 .95rem "Inter Tight";border:1px solid var(--ink);background:var(--panel);color:var(--ink);border-radius:10px;padding:10px 16px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--paper);width:100%;padding:14px;font-size:1rem}
+button.go{background:var(--red);border-color:var(--red);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.chips{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.chips button{text-align:left;border-color:var(--line);font-size:.88rem;color:var(--mute)}
+.chips button:hover{color:var(--ink);border-color:var(--ink)}
+.safe{font-size:.82rem;color:var(--green);margin-top:12px}
+.pill{display:inline-flex;gap:8px;align-items:center;font:500 .85rem "JetBrains Mono",monospace;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:var(--panel)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.pill.running i{background:var(--red);animation:pulse 1.2s infinite}.pill.paused i,.pill.waiting i{background:#d79b1e}.pill.done i{background:var(--green)}
+@keyframes pulse{50%{opacity:.25}}@media(prefers-reduced-motion:reduce){.pill i{animation:none!important}}
+.screen{background:var(--ink);border-radius:14px;overflow:hidden;margin-top:14px}
+.chrome{display:flex;gap:10px;align-items:center;padding:10px 14px;color:#a8a294;font:.82rem "JetBrains Mono",monospace}
+.chrome span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#2a2926;border-radius:6px;padding:4px 10px}
+.view{aspect-ratio:16/10;position:relative;display:grid;place-items:center;color:#8d877a;text-align:center;padding:24px}
+.view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.view::before,.view::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--red);opacity:.0;z-index:2}
+.view::before{top:10px;left:10px;border-right:0;border-bottom:0}.view::after{bottom:10px;right:10px;border-left:0;border-top:0}
+.live .view::before,.live .view::after{opacity:1}
+#log{display:flex;flex-direction:column;gap:8px;max-height:620px;overflow:auto}
+.ev{border-left:3px solid var(--red);padding:6px 10px;background:var(--paper);border-radius:0 8px 8px 0;cursor:pointer;font:.8rem/1.4 "JetBrains Mono",monospace}
+.ev b{font-weight:500}.ev small{display:block;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--mute);font-size:.9rem}
+#result{display:none;margin-top:14px;border-color:var(--green)}
+#result h2{font:700 1.3rem Fraunces,serif;margin-bottom:6px}#result pre{white-space:pre-wrap;font:inherit}
+dialog{border:1px solid var(--ink);border-radius:16px;padding:26px;max-width:460px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(27,26,23,.55)}
+dialog h3{font:700 1.4rem Fraunces,serif;margin-bottom:8px}dialog input{width:100%;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--paper)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tell it what you want.<br><em>Watch it get done.</em></h1>
+  <p class="lede">Operator opens a real browser window and works through the site like a person: searching, clicking, typing, comparing. It asks before anything irreversible and never pays.</p>
+
+  <div class="layout">
+    <section class="box">
+      <label for="task">What should I do?</label>
+      <textarea id="task" placeholder="Find the top-rated mechanical keyboard under $100 on Amazon, add it to my cart, and take me to checkout."></textarea>
+      <div class="row"><button class="primary go" id="run">Do it</button><button id="mic" title="Dictate" aria-label="Dictate task">Speak</button></div>
+      <div class="chips" id="chips">
+        <button>Find the top-rated mechanical keyboard under $100 on Amazon, add it to my cart, and go to checkout.</button>
+        <button>Search Google Flights for the cheapest one-way Delhi to Mumbai next Friday and show me the top 3 options.</button>
+        <button>Open Wikipedia, find the 5 most recent featured articles, and summarize each in one line.</button>
+      </div>
+      <div class="row"><button id="pause" disabled>Pause</button><button id="stop" disabled>Stop</button></div>
+      <p class="safe">Guardrails: stops at checkout, asks before logging in, sending, or deleting.</p>
+    </section>
+
+    <section>
+      <span class="pill" id="pill"><i></i><b id="state">Idle</b></span>
+      <div class="screen" id="screen">
+        <div class="chrome"><span id="url">The agent's browser window opens on your screen. A live mirror shows here.</span></div>
+        <div class="view" id="view">Waiting for an instruction.</div>
+      </div>
+      <div class="box" id="result"><h2>Result</h2><pre id="rtext"></pre><p class="empty" style="margin-top:10px">The browser window stays open so you can take over, for example to finish checkout yourself.</p></div>
+    </section>
+
+    <aside class="box"><label>Action log</label><div id="log" style="margin-top:10px"><p class="empty">Each step the agent takes appears here. Click one to revisit its screenshot.</p></div></aside>
+  </div>
+</main>
+
+<dialog id="ask"><h3>Operator needs you</h3><p id="q"></p><input id="ans" placeholder="Type a reply (optional)" aria-label="Reply">
+  <div class="row"><button id="approve" class="go">Approve</button><button id="deny">Deny</button><button id="send">Send reply</button></div></dialog>
+
+<script>
+const $=id=>document.getElementById(id); let ws,shots={};
+const setState=(k,t)=>{$('pill').className='pill '+k;$('state').textContent=t;$('screen').classList.toggle('live',k==='running')};
+const busy=b=>{$('run').disabled=b;$('pause').disabled=!b;$('stop').disabled=!b;if(!b)$('pause').textContent='Pause'};
+document.querySelectorAll('#chips button').forEach(c=>c.onclick=()=>{$('task').value=c.textContent;$('task').focus()});
+function show(n){const s=shots[n];if(!s)return;$('view').innerHTML=`<img alt="Browser at step ${n}" src="data:image/png;base64,${s.shot}">`;$('url').textContent=s.url}
+function connect(){
+  ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+  ws.onclose=()=>{setState('idle','Disconnected');setTimeout(connect,1500)};
+  ws.onmessage=e=>{const d=JSON.parse(e.data);
+    if(d.type==='status')setState(d.state,d.state==='paused'?'Paused':'Working');
+    if(d.type==='step'){shots[d.n]=d;const el=document.createElement('div');el.className='ev';
+      el.innerHTML='<b></b><small></small><small></small>';el.children[0].textContent=`${String(d.n).padStart(2,'0')}  ${d.action||'think'}`;
+      el.children[1].textContent=d.goal;el.children[2].textContent=d.url;el.onclick=()=>show(d.n);
+      $('log').prepend(el);if(d.shot)show(d.n)}
+    if(d.type==='ask'){setState('waiting','Waiting for you');$('q').textContent=d.question;$('ans').value='';$('ask').showModal()}
+    if(d.type==='done'){busy(false);setState('done','Done');$('rtext').textContent=d.result;$('result').style.display='block'}
+    if(d.type==='error'){busy(false);setState('idle','Error');$('rtext').textContent=d.msg;$('result').style.display='block'}
+  }}
+connect();
+const send=o=>ws.readyState===1&&ws.send(JSON.stringify(o));
+$('run').onclick=()=>{const t=$('task').value.trim();if(!t)return $('task').focus();
+  shots={};$('log').innerHTML='';$('result').style.display='none';$('view').textContent='Starting browser…';busy(true);setState('running','Working');send({type:'start',task:t})};
+$('pause').onclick=()=>{const p=$('pause').textContent==='Pause';send({type:p?'pause':'resume'});$('pause').textContent=p?'Resume':'Pause'};
+$('stop').onclick=()=>{send({type:'stop'});setState('idle','Stopping…')};
+const reply=t=>{send({type:'reply',text:t});$('ask').close()};
+$('approve').onclick=()=>reply('Approved. Proceed.'+($('ans').value?' Note: '+$('ans').value:''));
+$('deny').onclick=()=>reply('Denied. Do not do this; find another way or stop.');
+$('send').onclick=()=>reply($('ans').value||'Continue.');
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR)$('mic').hidden=true; else $('mic').onclick=()=>{const r=new SR();r.onresult=e=>$('task').value=e.results[0][0].transcript;r.start();$('mic').textContent='Listening…';r.onend=()=>$('mic').textContent='Speak'};
+</script>
+</body>
+</html>
